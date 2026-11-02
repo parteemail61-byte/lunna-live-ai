@@ -4,167 +4,138 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
-<title>Nico Live AI — Painel V4</title>
+<title>Nico Live AI — V5</title>
 <style>
 :root{color-scheme:dark;--bg:#101116;--panel:#1b1d26;--line:#343744;--accent:#a78bfa;--muted:#aeb2c0}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:#fff;font:15px system-ui,Arial,sans-serif}
-header{padding:14px 16px;background:#171922;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+body{margin:0;background:var(--bg);color:white;font:15px system-ui,Arial}
+header{padding:14px 16px;background:#171922;border-bottom:1px solid var(--line)}
 h1{font-size:19px;margin:0}
 header small{color:var(--muted)}
 main{max-width:720px;margin:auto;padding:12px;display:grid;gap:12px}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px}
 .label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px}
-.stage{aspect-ratio:9/16;max-height:75vh;width:100%;max-width:420px;margin:auto;background:#08090d;border-radius:12px;overflow:hidden;display:flex;align-items:center;justify-content:center;position:relative;isolation:isolate}
+.stage{aspect-ratio:9/16;max-height:75vh;width:100%;max-width:420px;margin:auto;background:#08090d;border-radius:12px;overflow:hidden;position:relative}
 video{width:100%;height:100%;object-fit:contain;background:#08090d}
-.placeholder{text-align:center;padding:22px;color:var(--muted);position:absolute;z-index:1}
+.placeholder{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:22px;color:var(--muted)}
 .row{display:flex;gap:8px;flex-wrap:wrap}
 button{border:0;border-radius:10px;padding:12px 14px;background:var(--accent);color:#15121d;font-weight:700;flex:1;min-width:110px}
 button.secondary{background:#343746;color:white}
-button:active{transform:scale(.98)}
 input[type=file]{width:100%;font-size:13px;color:var(--muted);margin-top:7px}
-.mapping{display:grid;grid-template-columns:1fr;gap:10px}
-.item{padding:10px;border:1px solid var(--line);border-radius:10px}
+.item{padding:10px;border:1px solid var(--line);border-radius:10px;margin-bottom:9px}
 .item strong{display:block;margin-bottom:5px}
-.status{font-size:13px;color:#f6cf79;line-height:1.4}
 .note{font-size:12px;color:var(--muted);line-height:1.5}
+.status{font-size:13px;color:#f6cf79}
 #log{max-height:110px;overflow:auto;font-size:12px;color:#c6c9d4;white-space:pre-wrap}
 
-/* ÁREAS INVISÍVEIS DE TOQUE */
-.hotspots{position:absolute;inset:0;z-index:4;pointer-events:none}
-.hotspot{
- position:absolute;
- border:0!important;
- outline:0!important;
- background:transparent!important;
- opacity:0!important;
- padding:0!important;
- min-width:0!important;
- border-radius:0!important;
- pointer-events:auto;
- touch-action:manipulation;
- -webkit-tap-highlight-color:transparent;
-}
-.hotspot:focus,.hotspot:active{outline:0!important;background:transparent!important}
+/* CINCO ÁREAS INVISÍVEIS */
+.hotspots{position:absolute;inset:0;pointer-events:none;z-index:5}
+.hotspot{position:absolute;border:0!important;background:transparent!important;opacity:0!important;padding:0!important;min-width:0!important;border-radius:0!important;pointer-events:auto;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.zone-top{left:25%;top:0;width:50%;height:15%}
+.zone-left{left:0;top:30%;width:20%;height:30%}
+.zone-right{right:0;top:30%;width:20%;height:30%}
+.zone-center{left:30%;top:35%;width:40%;height:25%}
+.zone-bottom{left:25%;bottom:0;width:50%;height:17%}
 
-/* Superior esquerdo e superior direito */
-.zone1{left:2%;top:10%;width:25%;height:12%}
-.zone2{right:2%;top:10%;width:25%;height:12%}
-
-/* Laterais */
-.zone3{left:0;top:37%;width:19%;height:19%}
-.zone4{right:0;top:37%;width:19%;height:19%}
-
-/* Centro e parte inferior */
-.zone5{left:35%;top:43%;width:30%;height:17%}
-.zone6{left:25%;bottom:3%;width:50%;height:13%}
-
-.stage:fullscreen{
- width:100vw;
- height:100dvh;
- max-width:none;
- max-height:none;
- aspect-ratio:auto;
- border-radius:0;
- background:#000;
-}
+.stage:fullscreen{width:100vw;height:100dvh;max-width:none;max-height:none;aspect-ratio:auto;border-radius:0}
 .stage:fullscreen video{object-fit:contain}
-.stage:fullscreen .hotspots{position:absolute;inset:0}
-@media (max-width:600px){
- header{position:relative}
- main{padding:8px}
- .stage{max-height:78vh}
-}
+@media(max-width:600px){main{padding:8px}}
 </style>
 </head>
 <body>
 
 <header>
-<h1>✨ NICO LIVE AI — V4</h1>
-<small>Painel de controle manual • áreas de toque invisíveis</small>
+<h1>✨ NICO LIVE AI — V5</h1>
+<small>Controle manual • 5 reações independentes</small>
 </header>
 
 <main>
 
 <section class="card">
- <div class="label">Tela do personagem</div>
+<div class="label">Tela do Nico</div>
+<div class="stage" id="stage">
+<div class="placeholder" id="placeholder">Carregue o vídeo principal para começar.</div>
+<video id="player" playsinline></video>
 
- <div class="stage" id="stage">
-  <div class="placeholder" id="placeholder">
-   Carregue o vídeo principal abaixo.<br>
-   Ele ficará repetindo até uma reação ser acionada.
-  </div>
+<div class="hotspots">
+<button class="hotspot zone-top" aria-label="Rosa" onclick="trigger('rose')"></button>
+<button class="hotspot zone-left" aria-label="Buquê" onclick="trigger('bouquet')"></button>
+<button class="hotspot zone-right" aria-label="Urso" onclick="trigger('bear')"></button>
+<button class="hotspot zone-center" aria-label="Presente luxuoso" onclick="trigger('luxury')"></button>
+<button class="hotspot zone-bottom" aria-label="Presente lendário" onclick="trigger('legendary')"></button>
+</div>
+</div>
 
-  <video id="player" playsinline></video>
-
-  <div class="hotspots" id="hotspots">
-   <button class="hotspot zone1" aria-label="Comando superior esquerdo" onclick="trigger('rose')"></button>
-   <button class="hotspot zone2" aria-label="Comando superior direito" onclick="trigger('bouquet')"></button>
-   <button class="hotspot zone3" aria-label="Comando lateral esquerdo" onclick="trigger('special')"></button>
-   <button class="hotspot zone4" aria-label="Comando lateral direito" onclick="trigger('rose')"></button>
-   <button class="hotspot zone5" aria-label="Comando central" onclick="trigger('bouquet')"></button>
-   <button class="hotspot zone6" aria-label="Comando inferior" onclick="trigger('special')"></button>
-  </div>
- </div>
-
- <div class="row" style="margin-top:10px">
-  <button class="secondary" id="pause">Pausar</button>
-  <button class="secondary" id="resume">Vídeo principal</button>
-  <button id="fullscreen">Tela cheia</button>
- </div>
-
- <p class="note">As seis áreas sobre o vídeo são invisíveis. Toque nas posições para acionar as reações.</p>
+<div class="row" style="margin-top:10px">
+<button class="secondary" id="pause">Pausar</button>
+<button class="secondary" id="resume">Vídeo principal</button>
+<button id="fullscreen">Tela cheia</button>
+</div>
+<p class="note">Os cinco pontos de toque são invisíveis sobre o vídeo.</p>
 </section>
 
 <section class="card">
- <div class="label">1 • Vídeo principal</div>
- <input id="idleFile" type="file" accept="video/mp4,video/webm,video/*">
- <p class="note">Selecione o vídeo em que o Nico fica parado na rua.</p>
+<div class="label">1 • Vídeo principal</div>
+<input id="idleFile" type="file" accept="video/*">
+<p class="note">Vídeo do Nico parado na rua, em repetição.</p>
 </section>
 
 <section class="card">
- <div class="label">2 • Vídeos de reação</div>
- <div class="mapping">
-  <div class="item">
-   <strong>🌹 Rosa</strong>
-   <input id="roseFile" type="file" accept="video/mp4,video/webm,video/*">
-  </div>
-  <div class="item">
-   <strong>💐 Buquê</strong>
-   <input id="bouquetFile" type="file" accept="video/mp4,video/webm,video/*">
-  </div>
-  <div class="item">
-   <strong>🧸 Presente especial / Urso</strong>
-   <input id="specialFile" type="file" accept="video/mp4,video/webm,video/*">
-  </div>
- </div>
- <p class="note">Os vídeos são selecionados no aparelho. Ao atualizar ou fechar a página, será necessário selecioná-los novamente.</p>
+<div class="label">2 • Cadastre os cinco vídeos de reação</div>
+
+<div class="item">
+<strong>🌹 1. Rosa — agradecimento</strong>
+<input id="roseFile" type="file" accept="video/*">
+</div>
+
+<div class="item">
+<strong>💐 2. Buquê — comemoração</strong>
+<input id="bouquetFile" type="file" accept="video/*">
+</div>
+
+<div class="item">
+<strong>🧸 3. Urso — abraço emocionado</strong>
+<input id="bearFile" type="file" accept="video/*">
+</div>
+
+<div class="item">
+<strong>💎 4. Presente luxuoso — surpresa</strong>
+<input id="luxuryFile" type="file" accept="video/*">
+</div>
+
+<div class="item">
+<strong>👑 5. Presente lendário — grande comemoração</strong>
+<input id="legendaryFile" type="file" accept="video/*">
+</div>
+
+<p class="note">Cada reação possui um vídeo separado. Se atualizar ou fechar a página, será necessário selecionar os vídeos novamente.</p>
 </section>
 
 <section class="card">
- <div class="label">3 • Testar reações</div>
- <div class="row">
-  <button onclick="trigger('rose')">🌹 Testar rosa</button>
-  <button onclick="trigger('bouquet')">💐 Testar buquê</button>
-  <button onclick="trigger('special')">🧸 Testar urso</button>
- </div>
+<div class="label">3 • Testar os cinco comandos</div>
+<div class="row">
+<button onclick="trigger('rose')">🌹 Rosa</button>
+<button onclick="trigger('bouquet')">💐 Buquê</button>
+<button onclick="trigger('bear')">🧸 Urso</button>
+<button onclick="trigger('luxury')">💎 Luxuoso</button>
+<button onclick="trigger('legendary')">👑 Lendário</button>
+</div>
 </section>
 
 <section class="card">
- <div class="label">Conta TikTok</div>
- <label for="tiktokUser" class="note">Usuário público da LIVE (sem senha)</label>
- <input id="tiktokUser" type="text" value="lunnamoraes_sf" autocomplete="off" style="width:100%;padding:12px;border-radius:9px;border:1px solid var(--line);background:#101116;color:white;margin:8px 0">
- <div class="row"><button id="saveUser">Salvar usuário</button></div>
- <p id="userStatus" class="status">Usuário preenchido: @lunnamoraes_sf.</p>
- <p class="note">Nunca informe sua senha ou código de verificação.</p>
+<div class="label">Conta TikTok</div>
+<input id="tiktokUser" type="text" value="lunnamoraes_sf" style="width:100%;padding:12px;border-radius:9px;background:#101116;color:white;border:1px solid var(--line)">
+<button id="saveUser" style="margin-top:8px">Salvar usuário</button>
+<p id="userStatus" class="status">Usuário preenchido: @lunnamoraes_sf</p>
+<p class="note">Não informe sua senha ou código de verificação.</p>
 </section>
 
 <section class="card">
- <div class="label">Conexão com servidor</div>
- <p id="serverStatus" class="status">Verificando servidor...</p>
- <p class="note">Servidor: https://lunna-live-ai.onrender.com. A leitura automática dos presentes ainda depende da configuração própria do servidor.</p>
- <div class="label" style="margin-top:12px">Registro de testes</div>
- <div id="log">Painel pronto. Carregue os vídeos para começar.</div>
+<div class="label">Servidor</div>
+<p id="serverStatus" class="status">Verificando servidor...</p>
+<p class="note">Servidor: https://lunna-live-ai.onrender.com</p>
+<div class="label">Registro de testes</div>
+<div id="log">Painel pronto.</div>
 </section>
 
 </main>
@@ -175,7 +146,24 @@ const player=document.getElementById('player');
 const placeholder=document.getElementById('placeholder');
 const stage=document.getElementById('stage');
 
-const urls={idle:null,rose:null,bouquet:null,special:null};
+const urls={
+ idle:null,
+ rose:null,
+ bouquet:null,
+ bear:null,
+ luxury:null,
+ legendary:null
+};
+
+const names={
+ idle:'vídeo principal',
+ rose:'rosa',
+ bouquet:'buquê',
+ bear:'urso',
+ luxury:'presente luxuoso',
+ legendary:'presente lendário'
+};
+
 let current='idle';
 let returnTimer=null;
 let lastEventId=0;
@@ -187,7 +175,7 @@ function log(msg){
 
 function setVideo(key){
  if(!urls[key]){
-  log('Adicione primeiro o vídeo desta reação.');
+  log('Carregue primeiro o vídeo: '+names[key]);
   return;
  }
 
@@ -195,30 +183,19 @@ function setVideo(key){
  current=key;
  placeholder.style.display='none';
  player.style.display='block';
+ player.onended=null;
  player.src=urls[key];
  player.loop=(key==='idle');
- player.onended=null;
  player.currentTime=0;
 
- player.play().catch(()=>{
-  log('Toque no vídeo ou permita a reprodução.');
- });
-
- const names={
-  idle:'vídeo principal',
-  rose:'rosa',
-  bouquet:'buquê',
-  special:'urso / presente especial'
- };
-
+ player.play().catch(()=>log('Toque na tela para permitir a reprodução.'));
  log('Reproduzindo: '+names[key]);
 
  if(key!=='idle'){
   player.onended=()=>setVideo('idle');
-
   returnTimer=setTimeout(()=>{
    if(current===key)setVideo('idle');
-  },20000);
+  },30000);
  }
 }
 
@@ -226,21 +203,22 @@ function trigger(key){
  setVideo(key);
 }
 
-[
+const fileInputs=[
  ['idleFile','idle'],
  ['roseFile','rose'],
  ['bouquetFile','bouquet'],
- ['specialFile','special']
-].forEach(([id,key])=>{
+ ['bearFile','bear'],
+ ['luxuryFile','luxury'],
+ ['legendaryFile','legendary']
+];
+
+fileInputs.forEach(([id,key])=>{
  document.getElementById(id).addEventListener('change',e=>{
-  const f=e.target.files[0];
-  if(!f)return;
-
+  const file=e.target.files[0];
+  if(!file)return;
   if(urls[key])URL.revokeObjectURL(urls[key]);
-  urls[key]=URL.createObjectURL(f);
-
-  log('Vídeo carregado: '+f.name);
-
+  urls[key]=URL.createObjectURL(file);
+  log('Vídeo carregado: '+names[key]);
   if(key==='idle')setVideo('idle');
  });
 });
@@ -250,28 +228,20 @@ document.getElementById('resume').onclick=()=>setVideo('idle');
 
 document.getElementById('fullscreen').onclick=async()=>{
  try{
-  if(!document.fullscreenElement){
-   await stage.requestFullscreen();
-  }else{
-   await document.exitFullscreen();
-  }
- }catch(e){
-  log('Não foi possível ativar tela cheia neste navegador.');
- }
+  if(!document.fullscreenElement)await stage.requestFullscreen();
+  else await document.exitFullscreen();
+ }catch(e){log('Não foi possível ativar tela cheia.');}
 };
 
 document.getElementById('saveUser').onclick=()=>{
  const username=document.getElementById('tiktokUser').value.trim().replace(/^@/,'');
- const status=document.getElementById('userStatus');
-
  if(!/^[A-Za-z0-9._]{2,24}$/.test(username)){
-  status.textContent='Confira o usuário: letras, números, ponto ou sublinhado.';
+  document.getElementById('userStatus').textContent='Confira o nome de usuário.';
   return;
  }
-
  document.getElementById('tiktokUser').value=username;
- status.textContent='Usuário configurado: @'+username;
- log('Usuário público configurado: @'+username);
+ document.getElementById('userStatus').textContent='Usuário configurado: @'+username;
+ log('Usuário configurado: @'+username);
 };
 
 async function checkServer(){
@@ -279,15 +249,10 @@ async function checkServer(){
   const r=await fetch(API+'/health');
   if(!r.ok)throw new Error('HTTP '+r.status);
   const j=await r.json();
-
   document.getElementById('serverStatus').textContent=
-   j.status==='online'
-   ?'Servidor conectado: online ✅'
-   :'Servidor respondeu, mas status inesperado.';
+   j.status==='online'?'Servidor online ✅':'Servidor respondeu.';
  }catch(e){
-  document.getElementById('serverStatus').textContent=
-   'Não foi possível conectar ao servidor agora.';
-  log('Falha ao consultar servidor: '+e.message);
+  document.getElementById('serverStatus').textContent='Servidor indisponível ou iniciando.';
  }
 }
 
@@ -295,15 +260,21 @@ async function pollGifts(){
  try{
   const r=await fetch(API+'/gift');
   if(!r.ok)return;
-
   const j=await r.json();
 
   if(j.event_id && j.event_id>lastEventId){
    lastEventId=j.event_id;
-
-   if(['rose','bouquet','special'].includes(j.reaction)){
-    log('Evento recebido do servidor: '+j.gift);
-    trigger(j.reaction);
+   const map={
+    rose:'rose',
+    bouquet:'bouquet',
+    bear:'bear',
+    luxury:'luxury',
+    legendary:'legendary',
+    special:'bear'
+   };
+   if(map[j.reaction]){
+    log('Evento recebido: '+j.gift);
+    trigger(map[j.reaction]);
    }
   }
  }catch(e){}
@@ -313,6 +284,5 @@ checkServer();
 setInterval(checkServer,30000);
 setInterval(pollGifts,1800);
 </script>
-
 </body>
 </html>
