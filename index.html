@@ -28,7 +28,7 @@ input[type=file]{width:100%;font-size:13px;color:var(--muted);margin-top:7px}
 </style>
 </head>
 <body>
-<header><h1>✨ LUNNA LIVE AI</h1><small>Painel de teste • versão 0.1 • controle manual</small></header>
+<header><h1>✨ LUNNA LIVE AI</h1><small>Painel de teste • controle manual e conexão com servidor</small></header>
 <main>
 <section class="card">
  <div class="label">Tela da personagem</div>
@@ -54,7 +54,7 @@ input[type=file]{width:100%;font-size:13px;color:var(--muted);margin-top:7px}
   <div class="item"><strong>💐 Buquê — dança</strong><input id="bouquetFile" type="file" accept="video/mp4,video/webm,video/*"></div>
   <div class="item"><strong>👑 Presente especial — pulo / comemoração</strong><input id="specialFile" type="file" accept="video/mp4,video/webm,video/*"></div>
  </div>
- <p class="note">Os vídeos são carregados diretamente do seu aparelho. Esta versão não envia seus arquivos para nenhum servidor.</p>
+ <p class="note">Os vídeos são carregados do seu aparelho. Se atualizar ou fechar a página, talvez precise selecioná-los novamente.</p>
 </section>
 <section class="card">
  <div class="label">3 • Botões manuais para testar</div>
@@ -63,29 +63,29 @@ input[type=file]{width:100%;font-size:13px;color:var(--muted);margin-top:7px}
   <button onclick="trigger('bouquet')">💐 Testar buquê</button>
   <button onclick="trigger('special')">👑 Testar especial</button>
  </div>
- <p class="note">Toque em um botão para a personagem executar o clipe correspondente. Ao terminar, o vídeo principal volta automaticamente.</p>
+ <p class="note">Ao terminar a reação, o vídeo principal volta automaticamente.</p>
 </section>
-
 <section class="card">
  <div class="label">Conexão da conta TikTok</div>
  <label for="tiktokUser" class="note">Usuário público da LIVE (não informe senha)</label>
  <input id="tiktokUser" type="text" value="lunnamoraes_sf" autocomplete="off" style="width:100%;padding:12px;border-radius:9px;border:1px solid var(--line);background:#101116;color:white;margin:8px 0">
  <div class="row"><button id="saveUser">Salvar usuário</button></div>
- <p id="userStatus" class="status">Usuário preenchido: @lunnamoraes_sf. Ainda não conectado ao TikTok: falta configurar o servidor de eventos.</p>
- <p class="note">Este campo apenas guarda o nome público no painel. Não inicia uma LIVE nem reconhece presentes ainda. Nunca coloque sua senha ou código de verificação aqui.</p>
+ <p id="userStatus" class="status">Usuário preenchido: @lunnamoraes_sf.</p>
+ <p class="note">Este campo guarda apenas o nome público. Nunca coloque sua senha ou código de verificação aqui.</p>
 </section>
-
 <section class="card">
- <div class="label">Conexão automática com TikTok</div>
- <div class="status">⚠️ Ainda não conectada nesta versão. O reconhecimento automático será ligado depois que configurarmos o servidor que recebe os eventos da LIVE.</div>
+ <div class="label">Conexão com servidor</div>
+ <p id="serverStatus" class="status">Verificando servidor...</p>
+ <p class="note">Servidor: https://lunna-live-ai.onrender.com. Esta etapa testa a comunicação; a leitura automática dos presentes do TikTok ainda será configurada separadamente.</p>
  <div class="label" style="margin-top:12px">Registro de testes</div>
  <div id="log">Painel pronto. Carregue os vídeos para começar.</div>
 </section>
 </main>
 <script>
+const API='https://lunna-live-ai.onrender.com';
 const player=document.getElementById('player'), placeholder=document.getElementById('placeholder');
 const urls={idle:null,rose:null,bouquet:null,special:null};
-let current='idle', returnTimer=null;
+let current='idle', returnTimer=null, lastEventId=0;
 function setVideo(key){
  if(!urls[key]){log('Adicione primeiro o vídeo desta reação.');return}
  clearTimeout(returnTimer); current=key; placeholder.style.display='none';
@@ -93,8 +93,8 @@ function setVideo(key){
  player.currentTime=0; player.play().catch(()=>log('Toque na tela para permitir a reprodução.'));
  log('Reproduzindo: '+({idle:'vídeo principal',rose:'rosa / beijo',bouquet:'buquê / dança',special:'presente especial'}[key]));
  if(key!=='idle'){
-   player.onended=()=>setVideo('idle');
-   returnTimer=setTimeout(()=>{if(current===key)setVideo('idle')},12000);
+  player.onended=()=>setVideo('idle');
+  returnTimer=setTimeout(()=>{if(current===key)setVideo('idle')},12000);
  } else {player.onended=null}
 }
 function trigger(key){setVideo(key)}
@@ -109,23 +109,36 @@ function log(msg){const el=document.getElementById('log');el.textContent=new Dat
 });
 document.getElementById('pause').onclick=()=>player.pause();
 document.getElementById('resume').onclick=()=>setVideo('idle');
-
-const userInput=document.getElementById('tiktokUser');
-const saveUser=document.getElementById('saveUser');
-if(saveUser){
- saveUser.onclick=()=>{
-  const username=userInput.value.trim().replace(/^@/,'');
-  if(!/^[A-Za-z0-9._]{2,24}$/.test(username)){
-   document.getElementById('userStatus').textContent='Confira o @: use apenas letras, números, ponto ou sublinhado.';
-   return;
-  }
-  userInput.value=username;
-  document.getElementById('userStatus').textContent='Usuário configurado: @'+username+'. Ainda falta conectar o servidor de eventos do TikTok.';
-  log('Usuário público configurado: @'+username);
- };
-}
-
+document.getElementById('saveUser').onclick=()=>{
+ const username=document.getElementById('tiktokUser').value.trim().replace(/^@/,'');
+ if(!/^[A-Za-z0-9._]{2,24}$/.test(username)){document.getElementById('userStatus').textContent='Confira o @: use apenas letras, números, ponto ou sublinhado.';return;}
+ document.getElementById('tiktokUser').value=username;
+ document.getElementById('userStatus').textContent='Usuário configurado: @'+username;
+ log('Usuário público configurado: @'+username);
+};
 document.getElementById('fullscreen').onclick=()=>document.getElementById('stage').requestFullscreen?.();
+async function checkServer(){
+ try{
+  const r=await fetch(API+'/health');
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  const j=await r.json();
+  document.getElementById('serverStatus').textContent=j.status==='online'?'Servidor conectado: online ✅':'Servidor respondeu, mas status inesperado.';
+ }catch(e){document.getElementById('serverStatus').textContent='Não foi possível conectar ao servidor agora. Ele pode estar iniciando ou dormindo.';log('Falha ao consultar servidor: '+e.message);}
+}
+async function pollGifts(){
+ try{
+  const r=await fetch(API+'/gift');
+  if(!r.ok)return;
+  const j=await r.json();
+  if(j.event_id && j.event_id>lastEventId){
+   lastEventId=j.event_id;
+   if(['rose','bouquet','special'].includes(j.reaction)){log('Evento recebido do servidor: '+j.gift);trigger(j.reaction);}
+  }
+ }catch(e){}
+}
+checkServer();
+setInterval(checkServer,30000);
+setInterval(pollGifts,1800);
 </script>
 </body>
 </html>
