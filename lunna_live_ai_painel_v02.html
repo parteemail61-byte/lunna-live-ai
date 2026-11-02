@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Lunna Live AI — Painel</title>
+<style>
+:root{color-scheme:dark;--bg:#101116;--panel:#1b1d26;--line:#343744;--accent:#a78bfa;--muted:#aeb2c0}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#fff;font:15px system-ui,Arial,sans-serif}
+header{padding:14px 16px;background:#171922;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:2}
+h1{font-size:19px;margin:0}header small{color:var(--muted)}
+main{max-width:720px;margin:auto;padding:12px;display:grid;gap:12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px}
+.label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px}
+.stage{aspect-ratio:9/16;max-height:58vh;margin:auto;background:#08090d;border-radius:12px;overflow:hidden;display:flex;align-items:center;justify-content:center;position:relative}
+video{width:100%;height:100%;object-fit:contain;background:#08090d}
+.placeholder{text-align:center;padding:22px;color:var(--muted)}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+button{border:0;border-radius:10px;padding:12px 14px;background:var(--accent);color:#15121d;font-weight:700;flex:1;min-width:110px}
+button.secondary{background:#343746;color:white}button:active{transform:scale(.98)}
+input[type=file]{width:100%;font-size:13px;color:var(--muted);margin-top:7px}
+.mapping{display:grid;grid-template-columns:1fr;gap:10px}
+.item{padding:10px;border:1px solid var(--line);border-radius:10px}
+.item strong{display:block;margin-bottom:5px}
+.status{font-size:13px;color:#f6cf79;line-height:1.4}
+.note{font-size:12px;color:var(--muted);line-height:1.5}
+#log{max-height:110px;overflow:auto;font-size:12px;color:#c6c9d4;white-space:pre-wrap}
+</style>
+</head>
+<body>
+<header><h1>✨ LUNNA LIVE AI</h1><small>Painel de teste • versão 0.1 • controle manual</small></header>
+<main>
+<section class="card">
+ <div class="label">Tela da personagem</div>
+ <div class="stage" id="stage">
+  <div class="placeholder" id="placeholder">Carregue um vídeo principal abaixo.<br>Ele ficará em repetição até você acionar uma reação.</div>
+  <video id="player" playsinline></video>
+ </div>
+ <div class="row" style="margin-top:10px">
+  <button class="secondary" id="pause">Pausar</button>
+  <button class="secondary" id="resume">Voltar ao vídeo principal</button>
+  <button id="fullscreen">Tela cheia</button>
+ </div>
+</section>
+<section class="card">
+ <div class="label">1 • Vídeo principal (personagem parada)</div>
+ <input id="idleFile" type="file" accept="video/mp4,video/webm,video/*">
+ <p class="note">Escolha o vídeo que ficará aparecendo enquanto nenhum presente chegar.</p>
+</section>
+<section class="card">
+ <div class="label">2 • Cadastre as reações</div>
+ <div class="mapping">
+  <div class="item"><strong>🌹 Rosa — beijo / agradecimento</strong><input id="roseFile" type="file" accept="video/mp4,video/webm,video/*"></div>
+  <div class="item"><strong>💐 Buquê — dança</strong><input id="bouquetFile" type="file" accept="video/mp4,video/webm,video/*"></div>
+  <div class="item"><strong>👑 Presente especial — pulo / comemoração</strong><input id="specialFile" type="file" accept="video/mp4,video/webm,video/*"></div>
+ </div>
+ <p class="note">Os vídeos são carregados diretamente do seu aparelho. Esta versão não envia seus arquivos para nenhum servidor.</p>
+</section>
+<section class="card">
+ <div class="label">3 • Botões manuais para testar</div>
+ <div class="row">
+  <button onclick="trigger('rose')">🌹 Testar rosa</button>
+  <button onclick="trigger('bouquet')">💐 Testar buquê</button>
+  <button onclick="trigger('special')">👑 Testar especial</button>
+ </div>
+ <p class="note">Toque em um botão para a personagem executar o clipe correspondente. Ao terminar, o vídeo principal volta automaticamente.</p>
+</section>
+
+<section class="card">
+ <div class="label">Conexão da conta TikTok</div>
+ <label for="tiktokUser" class="note">Usuário público da LIVE (não informe senha)</label>
+ <input id="tiktokUser" type="text" value="lunnamoraes_sf" autocomplete="off" style="width:100%;padding:12px;border-radius:9px;border:1px solid var(--line);background:#101116;color:white;margin:8px 0">
+ <div class="row"><button id="saveUser">Salvar usuário</button></div>
+ <p id="userStatus" class="status">Usuário preenchido: @lunnamoraes_sf. Ainda não conectado ao TikTok: falta configurar o servidor de eventos.</p>
+ <p class="note">Este campo apenas guarda o nome público no painel. Não inicia uma LIVE nem reconhece presentes ainda. Nunca coloque sua senha ou código de verificação aqui.</p>
+</section>
+
+<section class="card">
+ <div class="label">Conexão automática com TikTok</div>
+ <div class="status">⚠️ Ainda não conectada nesta versão. O reconhecimento automático será ligado depois que configurarmos o servidor que recebe os eventos da LIVE.</div>
+ <div class="label" style="margin-top:12px">Registro de testes</div>
+ <div id="log">Painel pronto. Carregue os vídeos para começar.</div>
+</section>
+</main>
+<script>
+const player=document.getElementById('player'), placeholder=document.getElementById('placeholder');
+const urls={idle:null,rose:null,bouquet:null,special:null};
+let current='idle', returnTimer=null;
+function setVideo(key){
+ if(!urls[key]){log('Adicione primeiro o vídeo desta reação.');return}
+ clearTimeout(returnTimer); current=key; placeholder.style.display='none';
+ player.style.display='block'; player.src=urls[key]; player.loop=(key==='idle');
+ player.currentTime=0; player.play().catch(()=>log('Toque na tela para permitir a reprodução.'));
+ log('Reproduzindo: '+({idle:'vídeo principal',rose:'rosa / beijo',bouquet:'buquê / dança',special:'presente especial'}[key]));
+ if(key!=='idle'){
+   player.onended=()=>setVideo('idle');
+   returnTimer=setTimeout(()=>{if(current===key)setVideo('idle')},12000);
+ } else {player.onended=null}
+}
+function trigger(key){setVideo(key)}
+function log(msg){const el=document.getElementById('log');el.textContent=new Date().toLocaleTimeString()+' — '+msg+'\n'+el.textContent}
+[['idleFile','idle'],['roseFile','rose'],['bouquetFile','bouquet'],['specialFile','special']].forEach(([id,key])=>{
+ document.getElementById(id).addEventListener('change',e=>{
+  const f=e.target.files[0]; if(!f)return;
+  if(urls[key])URL.revokeObjectURL(urls[key]);
+  urls[key]=URL.createObjectURL(f);log('Vídeo carregado: '+f.name);
+  if(key==='idle')setVideo('idle');
+ });
+});
+document.getElementById('pause').onclick=()=>player.pause();
+document.getElementById('resume').onclick=()=>setVideo('idle');
+
+const userInput=document.getElementById('tiktokUser');
+const saveUser=document.getElementById('saveUser');
+if(saveUser){
+ saveUser.onclick=()=>{
+  const username=userInput.value.trim().replace(/^@/,'');
+  if(!/^[A-Za-z0-9._]{2,24}$/.test(username)){
+   document.getElementById('userStatus').textContent='Confira o @: use apenas letras, números, ponto ou sublinhado.';
+   return;
+  }
+  userInput.value=username;
+  document.getElementById('userStatus').textContent='Usuário configurado: @'+username+'. Ainda falta conectar o servidor de eventos do TikTok.';
+  log('Usuário público configurado: @'+username);
+ };
+}
+
+document.getElementById('fullscreen').onclick=()=>document.getElementById('stage').requestFullscreen?.();
+</script>
+</body>
+</html>
