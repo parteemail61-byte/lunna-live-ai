@@ -10,7 +10,7 @@ import os
 app = Flask(__name__)
 CORS(app)
 
-USERNAME = "lunnamoraes_sf"
+USERNAME = "@lunnamoraes_sf"
 lock = Lock()
 
 last_gift = {
